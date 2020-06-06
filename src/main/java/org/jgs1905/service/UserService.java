@@ -9,7 +9,7 @@ public class UserService {
 	private UserDao  userDao = new UserDao();
 	
 	//注册
-	public int regist(User user) throws SQLException {
+	public int add(User user) throws SQLException {
 		
 		return userDao.insert(user);
 	}

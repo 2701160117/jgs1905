@@ -1,11 +1,10 @@
-package org.jgs1905.control;
+package org.jgs1905.controller;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.sql.SQLException;
-import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,44 +19,47 @@ import org.jgs1905.entity.User;
 import org.jgs1905.service.UserService;
 
 /**
- * Servlet implementation class UserControl
+ * 用户控制器
+ * @author Administrator
+ *
  */
 @WebServlet("/user")
 public class UserControl extends HttpServlet {
-	private static final long serialVersionUID = 18498465484654L;
-	private static final Logger LOGGER = Logger.getAnonymousLogger(UserControl.class.getCanonicalName());
+	private static final long serialVersionUID = 1L;
 	private UserService userService = new UserService();
-       
+    
+	public UserControl() {}
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String method =  request.getParameter("method");
 		
-		LOGGER.info("======================"+method+"===========================");
-		
-		
 		switch (method) {
 		case "login":
-			login(request,response);
+			login(request, response);
 			break;
-		case "regist":
-			try {
-				regist(request,response);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (ServletException e) {
-				e.printStackTrace();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+		case "register":
+			register(request, response);
 			break;
-		case "forget":
-			
+		case "logout":
+			logout(request, response);
 			break;
-
 		default:
+			response.sendRedirect(request.getContextPath() + "/error/404.jsp");
 			break;
 		}
 	
 	}
+
+	/**
+	 * 	退出登录方法
+	 * @param request
+	 * @param response
+	 * @throws IOException 
+	 */
+	private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		request.getSession().removeAttribute("onlineUser");
+		response.sendRedirect(request.getContextPath() + "/user/index.jsp");
+	}
+
 
 	private void login(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		User user = new User();
@@ -122,7 +124,7 @@ public class UserControl extends HttpServlet {
 		} else {
 			session.setAttribute("message", "用户名或密码错误！");
 			request.setAttribute("user", user);
-			request.getRequestDispatcher("/user/login.jsp").forward(request, response);
+			request.getRequestDispatcher("/user/index.jsp").forward(request, response);
 		}
 	}
 
@@ -134,29 +136,34 @@ public class UserControl extends HttpServlet {
 	 * @throws ServletException 
 	 * @throws SQLException 
 	 */
-	private void regist(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException, SQLException {
-		User user = new User();
-		try {
-			BeanUtils.populate(user, request.getParameterMap());
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
-		}
-		UserService userService = new UserService();
-		int result = userService.regist(user);
-		
-		HttpSession session = request.getSession();
-		if (result == 1) {
-			session.setAttribute("user", user);
-			response.sendRedirect(request.getContextPath() + "/user/login.jsp");
-		} else {
-			request.setAttribute("message", "注册失败，请重试！");
-			request.setAttribute("user", user);
-			request.getRequestDispatcher("/user/regist.jsp").forward(request, response);
-		}
+	private void register(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		// 获取请求参数并封装
+				User user = new User();
+				try {
+					BeanUtils.populate(user, request.getParameterMap());
+				} catch (IllegalAccessException | InvocationTargetException e) {
+					e.printStackTrace();
+				}
+				
+				// 调用service方法保存用户
+				int result = 0;
+				try {
+					result = userService.add(user);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				
+				// 判断是否注册成功
+				if (result == 0) {
+					request.setAttribute("message", "注册失败，请重试！");
+					request.setAttribute("user", user);
+					request.getRequestDispatcher("/user/regist.jsp").forward(request, response);
+				} else {
+					response.sendRedirect(request.getContextPath() + "/user/index.jsp");
+				}
 	}
-
+	
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
 	}
-
 }

@@ -8,5 +8,7 @@
 </head>
 <body>
 	<h1>欢迎来到贴吧</h1>
+	
+	<a href="${ bp }/user/index.jsp">返回登录</a>
 </body>
 </html>
